@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      站点描述刻意保持「无事实主张」：不写成立年份、产地、认证、销量或供应链能力
+      —— 这些品牌方尚未提供，写了就是编造。
+    -->
+    <meta name="description" content="首饰、假发与发片、美妆工具与美容配件。浏览商品详情后提交询价，客服跟进报价。" />
+    <!-- 与 src/config/brand.ts 的 brandPrimaryColor 保持一致（构建期无法读取 TS 配置，故此处为静态兜底） -->
+    <meta name="theme-color" content="#8e4a5f" />
+
+    <!--
+      ============================================================
+      社交分享卡片（Open Graph / Twitter Card）
+      ============================================================
+      只写**站点级**且**可核实**的事实：站名与品类范围。
+      刻意不写价格、评分、销量、促销或任何商品级主张 ——
+      这些随页面变化，静态写死会与实际页面不一致。
+
+      ⚠️ og:url 刻意不写：没有配置生产域名，写死会出现
+         「canonical / og:url 指向错误站点」这种更糟的问题。
+         爬虫未取到 og:url 时会自动使用实际抓取地址，行为正确。
+      ⚠️ og:image 目前用相对路径。多数爬虫会基于抓取地址解析，
+         但 Open Graph 规范要求绝对地址 —— 上线前应补为
+         `https://<生产域名>/brand/logo-mark.png`。
+      ⚠️ 现用 logo-mark.png 为 512×512 方图，满足最小 200×200 要求；
+         但分享卡片理想尺寸是 1200×630，建议品牌定稿后另出一张。
+
+      页面级 og:title / og:description 由 src/App.vue 按路由覆写。
+    -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="BEAUTY STORE" />
+    <meta property="og:title" content="BEAUTY STORE" />
+    <meta
+      property="og:description"
+      content="首饰、假发与发片、美妆工具与美容配件。浏览商品详情后提交询价，客服跟进报价。"
+    />
+    <meta property="og:image" content="/brand/logo-mark.png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:locale" content="zh_CN" />
+    <!-- 方图用 summary 卡片；summary_large_image 需要 2:1 横图，方图会被裁切 -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="BEAUTY STORE" />
+    <meta
+      name="twitter:description"
+      content="首饰、假发与发片、美妆工具与美容配件。浏览商品详情后提交询价，客服跟进报价。"
+    />
+    <meta name="twitter:image" content="/brand/logo-mark.png" />
+    <!-- 站点图标：由中性刻面宝石标记生成（无任何动物元素） -->
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/brand/app-icon.png" />
+    <!--
+      构建期兜底标题：运行时由 src/App.vue 依据品牌配置 + 路由 meta.title 覆写。
+    -->
+    <title>BEAUTY STORE</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

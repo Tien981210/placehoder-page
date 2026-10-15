@@ -1,0 +1,3660 @@
+/* ============================================================
+   BEAUTY STORE —— 主站全局样式与设计系统
+   ------------------------------------------------------------
+   纯 CSS，不依赖任何 CSS 框架。
+
+   三层结构：
+     1. 令牌层（:root）—— 颜色 / 字号 / 间距 / 圆角 / 阴影 / 断点
+     2. 基础层        —— reset、排版、可访问性工具类
+     3. 组件层        —— 按钮、表单、卡片、导航、抽屉、状态、Toast …
+
+   ⚠️ 品牌色（--brand / --accent 及其色阶）由 `src/config/brand.ts`
+      在启动时通过 `applyBrandTheme()` 写入 `<html>` 的内联样式覆盖。
+      这里保留一份**默认值**，保证 JS 未执行时页面依然完整可读。
+   ⚠️ 组件里**不要**硬编码颜色，一律消费令牌。
+   ============================================================ */
+
+:root {
+  /* ---------- 品牌色（可被 applyBrandTheme 覆盖） ---------- */
+  --brand: #8e4a5f;
+  --brand-600: #7d4153;
+  --brand-700: #663647;
+  --brand-50: #f6eef1;
+  --brand-100: #eedde3;
+  --brand-ink: #7d4153;
+  --on-brand: #ffffff;
+  --accent: #c2a05b;
+  --accent-50: #f8f3e8;
+  --on-accent: #242321;
+
+  /* ---------- 中性色（暖白体系） ---------- */
+  --bg: #faf8f5;
+  --surface: #ffffff;
+  --surface-2: #f5f2ee;
+  --ink: #242321;
+  /*
+   * 次级 / 辅助文字灰阶。
+   *
+   * ⚠️ Phase 2.2 修正：原先 `--ink-2: #77736f`、`--ink-3: #9c9691`，
+   *    实测对比度（相对 `--surface` #fff / `--bg` #faf8f5 / `--surface-2` #f5f2ee）：
+   *      ink-2 → 4.70 / 4.44 / 4.21（在浅底上已低于 WCAG AA 的 4.5:1）
+   *      ink-3 → 2.92 / 2.76 / 2.62（**远低于** 4.5:1）
+   *    而 ink-3 恰好用在最需要看清的地方：商品卡元信息（11px）、
+   *    详情页规格表的 `<dt>` 字段名、面包屑、表单字段提示、页脚说明。
+   *    现在把两级都压到 AA 以上，并保持「ink > ink-2 > ink-3」的层次：
+   *      ink-2 #66615b → 6.13 / 5.78 / 5.49
+   *      ink-3 #726d67 → 5.12 / 4.83 / 4.59
+   *    （两级在浅底上仍可肉眼分辨，且都不再是「洗白到读不清」的浅灰。）
+   *    这两个值**只用于文字**（已核验：全站没有把它们用作背景或边框），
+   *    因此加深不会影响分隔线 / 面块。
+   */
+  --ink-2: #66615b;
+  --ink-3: #726d67;
+  --line: #e8e2dc;
+  --line-2: #d9d1c9;
+  --danger: #b3261e;
+  --danger-bg: #fdf1f0;
+  --danger-line: #eccfcc;
+  --success: #2f6b4f;
+  --success-bg: #eff6f1;
+  --success-line: #cfe2d7;
+  --warn: #7a5310;
+  --warn-bg: #fbf3e4;
+  --warn-line: #ecd9b4;
+
+  /* ---------- 旧令牌别名（保持历史组件可用） ---------- */
+  --color-bg: var(--bg);
+  --color-bg-soft: var(--brand-50);
+  --color-surface: var(--surface);
+  --color-text: var(--ink);
+  --color-text-muted: var(--ink-2);
+  --color-text-subtle: var(--ink-3);
+  --color-border: var(--line);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-primary: var(--brand);
+  --color-primary-dark: var(--brand-700);
+  --color-danger: var(--danger);
+
+  /* ---------- 圆角 / 阴影 ---------- */
+  --r-xs: 3px;
+  --r-sm: 5px;
+  --r: 8px;
+  --r-lg: 16px;
+  /*
+   * 控件圆角（按钮 / 标签 / 输入框）。
+   *
+   * ⚠️ 刻意**不用胶囊形**（原先是 `--r-pill: 999px`）。
+   *    规范明确禁止「大量使用胶囊按钮、胶囊标签」—— 胶囊形在整站铺开后
+   *    会让页面呈现"通用 SaaS 模板"的观感，与编辑式美容品牌的克制调性相悖。
+   *    保留 `--r-pill` 令牌只给真正的圆形指示物（计数气泡、圆点）使用。
+   */
+  --r-control: 6px;
+  --radius: var(--r);
+  --radius-sm: var(--r-sm);
+  --r-pill: 999px;
+  --shadow-sm: 0 1px 3px rgb(36 35 33 / 5%);
+  --shadow: 0 12px 32px rgb(36 35 33 / 9%);
+  --shadow-lg: 0 24px 60px rgb(36 35 33 / 14%);
+
+  /* ---------- 间距 ---------- */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+  --sp-7: 3rem;
+  --sp-8: 4rem;
+  --sp-9: 5.5rem;
+
+  /* ---------- 排版 ---------- */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Noto Sans SC', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  --fs-xs: 0.75rem;
+  /*
+   * 辅助文字基准（元信息 / 提示 / 页脚 / 工具导航）。
+   *
+   * ⚠️ Phase 2.2 修正：原为 0.8125rem（13px）。实测顶部工具导航
+   *    （搜索 / 联系我们 / 询价清单）13px 与主导航项 15px 落差过大，
+   *    在 1440 下明显偏小、像「次要到可以忽略」。统一提到 0.875rem（14px）：
+   *    这一级同时承担全站辅助文字，提升后既收敛了与导航的落差，
+   *    也让 11px 级别的元信息之外的说明文字更易读。
+   */
+  --fs-sm: 0.875rem;
+  --fs-base: 0.9375rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.375rem;
+  --fs-2xl: 1.75rem;
+  --fs-3xl: 2.25rem;
+  --fs-4xl: clamp(2rem, 5vw, 3.5rem);
+  /*
+   * 编辑式主标题（首屏 H1 专用）。
+   * 与 --fs-4xl 分开是为了让首屏能单独放大，而不连带把「区块标题」也撑大 ——
+   * 全站只有一个 H1，它承担视觉锚点，其余标题保持克制。
+   */
+  --fs-display: clamp(2.25rem, 5.2vw, 4rem);
+
+  /* ---------- 动效 ---------- */
+  /* 统一缓动：悬停 / 焦点反馈共用一条曲线，避免各组件各写一个 ease。 */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ---------- 布局 ---------- */
+  --container: 1240px;
+  --nav-h: 64px;
+  --promo-h: 38px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  color-scheme: light;
+}
+
+/* ============================================================
+   基础
+   ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  /*
+   * ⚠️ Phase 2.2 修正：这里原先有一句 `overflow-x: hidden`。
+   *
+   *    它属于规范明确禁止的「用全局横向裁切掩盖真实布局缺陷」的做法 ——
+   *    一旦某处真的溢出，页面不会暴露问题，而是被静默裁掉（内容看不见、
+   *    也测不出来）。另外它还会把 `<body>` 变成滚动容器，
+   *    影响 `position: sticky` 页头的参照系。
+   *
+   *    移除前已实测确认**没有真实横向溢出**（真实浏览器，5 视口 × 8 路由，
+   *    并在「Mega 面板展开 / 移动端菜单打开 / 询价清单抽屉打开」状态下复测）：
+   *    临时把 `overflow-x` 放开后，`documentElement.scrollWidth` 与
+   *    `clientWidth` 始终相等；唯一超出视口的是关闭态下 `position: fixed`
+   *    的抽屉，它不产生文档级可滚动溢出。
+   *
+   *    因此这里**不**再设置任何横向裁切：真出现溢出就让横向滚动条暴露出来，
+   *    由测试脚本（`scrollWidth - clientWidth` 与元素越界检测）捕获。
+   */
+}
+
+img,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ul,
+ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+p {
+  margin: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/*
+ * 触摸目标最小尺寸（WCAG 2.5.8）的规则**不在这里** ——
+ * 见文件末尾的 `@media (pointer: coarse)` 块。
+ *
+ * ⚠️ 为什么必须放在文件最后：这份块原先声明在基础层（本行附近），
+ *    而 `.add-btn { min-height: 38px }` / `.btn--sm { min-height: 38px }` 等
+ *    规则声明在组件层（更靠后）。同特异性下**后声明者胜出**，
+ *    于是 44px 的触控规则被静默覆盖 —— 实测 390px 下商品卡主按钮
+ *    只有 38px 高（规范要求 ≥ 44px）。把这份块移到末尾即可整体生效。
+ */
+
+/* ============================================================
+   排版工具类
+   ============================================================ */
+
+.wrap {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 4vw, 2rem);
+  width: 100%;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin: 0 auto;
+  padding-left: clamp(1rem, 4vw, 2rem);
+  padding-right: clamp(1rem, 4vw, 2rem);
+}
+
+/* 非 hero 页面：为吸顶导航让出高度 */
+/*
+ * ⚠️ 必须用 `padding-block` 而不是 `padding` 简写。
+ *
+ * 页面根节点通常是 `class="page container"`：`.container` 负责左右内边距，
+ * `.page` 负责上下。若这里写成 `padding: … 0 …`，简写会把左右内边距**一并重置为 0**；
+ * 而 `.page` 在本文件里声明得比 `.container` 晚，同特异性下后声明的胜出 ——
+ * 结果就是内容在窄屏直接贴到屏幕边缘（宽屏因为容器居中而看不出来，极具迷惑性）。
+ * 用 `padding-block` 只作用于上下，不再和 `.container` 抢左右。
+ */
+.page {
+  padding-block: calc(var(--nav-h) + var(--sp-6)) var(--sp-8);
+}
+
+.page__header {
+  margin-bottom: var(--sp-5);
+  max-width: 46rem;
+}
+
+.page__title {
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.page__subtitle {
+  margin-top: var(--sp-2);
+  color: var(--ink-2);
+  font-size: var(--fs-base);
+}
+
+/* 编辑式小标题（全大写 + 字距）—— 全站统一的「高级感」细节 */
+.overline {
+  display: block;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.muted {
+  color: var(--ink-2);
+}
+
+.subtle {
+  color: var(--ink-3);
+  font-size: var(--fs-sm);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.row {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 200;
+  padding: 0.6rem 1rem;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 0 0 var(--r-sm) 0;
+}
+
+.skip-link:focus {
+  left: 0;
+}
+
+/* ============================================================
+   按钮
+   ============================================================ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0 1.5rem;
+  border: 1px solid transparent;
+  border-radius: var(--r-control);
+  font-size: var(--fs-base);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, opacity 0.18s;
+}
+
+.btn--primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--on-brand);
+}
+
+.btn--primary:hover {
+  background: var(--brand-600);
+  border-color: var(--brand-600);
+}
+
+.btn--ghost {
+  background: transparent;
+  border-color: var(--line-2);
+  color: var(--ink);
+}
+
+.btn--ghost:hover {
+  border-color: var(--ink);
+  background: var(--surface);
+}
+
+.btn--quiet {
+  background: var(--surface-2);
+  border-color: transparent;
+  color: var(--ink);
+}
+
+.btn--quiet:hover {
+  background: var(--line);
+}
+
+/*
+ * Destructive —— 破坏性操作（清空清单 / 删除）。
+ *
+ * ⚠️ 必须与次级操作在视觉上可区分：此前「清空清单」与「继续挑选」用完全相同的
+ *    `.btn--ghost`，顾客无法从外观判断哪个操作会丢掉已选商品。
+ *    这里用**描边 + 危险色文字**而不是实心红：破坏性操作不该比主操作更抢眼。
+ */
+.btn--danger {
+  background: transparent;
+  border-color: var(--danger-line);
+  color: var(--danger);
+}
+
+.btn--danger:hover {
+  background: var(--danger-bg);
+  border-color: var(--danger);
+}
+
+.btn--sm {
+  min-height: 38px;
+  padding: 0 1rem;
+  font-size: var(--fs-sm);
+}
+
+.btn[disabled],
+.btn[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn--block {
+  width: 100%;
+}
+
+/* 图标按钮 */
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: var(--ink);
+  transition: background 0.18s;
+}
+
+.icon-btn:hover {
+  background: var(--surface-2);
+}
+
+/* ============================================================
+   表单
+   ============================================================ */
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-bottom: var(--sp-4);
+  min-width: 0;
+}
+
+.form-field__label {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.form-field__hint {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  line-height: 1.55;
+}
+
+.form-field__error {
+  font-size: var(--fs-xs);
+  color: var(--danger);
+  font-weight: 600;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: var(--fs-base);
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink);
+  width: 100%;
+  min-height: 44px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--ink-3);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-50);
+}
+
+input[aria-invalid='true'],
+textarea[aria-invalid='true'] {
+  border-color: var(--danger);
+  background: var(--danger-bg);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 5rem;
+}
+
+/* ============================================================
+   提示 / 通知块
+   ============================================================ */
+
+.notice {
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  border-radius: var(--r-sm);
+  padding: 0.75rem 1rem;
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.notice--info {
+  border-color: var(--brand-100);
+  background: var(--brand-50);
+  color: var(--brand-700);
+}
+
+.notice--warn {
+  border-color: var(--warn-line);
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.notice--error {
+  border-color: var(--danger-line);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.notice a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* WhatsApp / 渠道说明块（结果页与结算页共用） */
+.wa-note {
+  background: var(--success-bg);
+  border: 1px solid var(--success-line);
+  border-radius: var(--r-sm);
+  padding: 0.85rem 1rem;
+  font-size: var(--fs-sm);
+  color: var(--success);
+  line-height: 1.65;
+}
+
+/* ============================================================
+   面板 / 表格 / 分页
+   ============================================================ */
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: var(--sp-5);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-base);
+}
+
+.data-table th,
+.data-table td {
+  text-align: left;
+  padding: 0.7rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.data-table th {
+  color: var(--ink-2);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-6);
+  flex-wrap: wrap;
+}
+
+.pagination__info {
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+}
+
+/* ============================================================
+   顶部信息条 + 导航
+   ============================================================ */
+
+.site-header {
+  position: sticky;
+  top: calc(-1 * var(--promo-h));
+  z-index: 60;
+  /* 让导航覆盖在 hero 之上（页面自行用 --nav-h 让位） */
+  margin-bottom: calc(-1 * var(--nav-h));
+}
+
+.site-header--no-promo {
+  top: 0;
+}
+
+.promo {
+  height: var(--promo-h);
+  background: var(--ink);
+  color: #f6f3ef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  font-size: var(--fs-sm);
+  position: relative;
+  z-index: 1;
+  padding: 0 3rem;
+  text-align: center;
+}
+
+/*
+ * 公告条的窄屏短句：默认隐藏，≤560px 时与 `.promo-extra` 互换。
+ * 只显示「询价制」三个字会读成半句话，所以窄屏换一条完整短句。
+ */
+.promo-short {
+  display: none;
+}
+
+.promo b {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.promo-close {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  opacity: 0.7;
+}
+
+.promo-close:hover {
+  opacity: 1;
+  background: rgb(255 255 255 / 12%);
+}
+
+.nav-bar {
+  background: var(--surface);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.nav-bar.scrolled,
+.nav-bar.mega-open {
+  border-bottom-color: var(--line);
+  box-shadow: 0 1px 20px rgb(36 35 33 / 6%);
+}
+
+.nav-inner {
+  height: var(--nav-h);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 4vw, 2rem);
+}
+
+/* ---------- 品牌字标 ---------- */
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex: none;
+  margin-right: var(--sp-5);
+}
+
+.brand__mark {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  color: var(--brand);
+}
+
+.brand__name {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.brand__name--sm {
+  font-size: 0.9375rem;
+  letter-spacing: 0.16em;
+}
+
+/* ---------- 主导航 ---------- */
+
+.menu {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.menu-item {
+  position: relative;
+}
+
+.menu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  height: 40px;
+  padding: 0 0.85rem;
+  border-radius: var(--r-control);
+  font-size: var(--fs-base);
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  transition: background 0.16s, color 0.16s;
+}
+
+.menu-btn:hover {
+  background: var(--surface-2);
+}
+
+.menu-btn .chev {
+  transition: transform 0.2s;
+  flex: none;
+}
+
+.menu-item.open > .menu-btn {
+  background: var(--brand-50);
+  color: var(--brand-700);
+}
+
+.menu-item.open > .menu-btn .chev {
+  transform: rotate(180deg);
+}
+
+.menu-btn--accent {
+  color: var(--brand-700);
+  font-weight: 600;
+}
+
+/* ---------- 工具区 ---------- */
+
+.utils {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+
+.util-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 40px;
+  padding: 0 0.7rem;
+  border-radius: var(--r-control);
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  white-space: nowrap;
+  transition: background 0.16s, color 0.16s;
+}
+
+.util-btn:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.util-btn--icon {
+  width: 44px;
+  justify-content: center;
+  padding: 0;
+}
+
+.badge {
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border-radius: var(--r-pill);
+  background: var(--brand);
+  color: var(--on-brand);
+  font-size: 11px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
+.badge.zero {
+  display: none;
+}
+
+.hamburger {
+  display: none;
+  margin-left: auto;
+}
+
+/* ---------- Mega 面板 ---------- */
+
+.mega-layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  padding: 0 clamp(1rem, 4vw, 2rem);
+  pointer-events: none;
+}
+
+.mega {
+  max-width: var(--container);
+  margin: 0 auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  padding: var(--sp-5);
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: var(--sp-5);
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.18s, transform 0.18s;
+  pointer-events: none;
+}
+
+.mega.show {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.mega-col {
+  min-width: 0;
+}
+
+.mega-col-title {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: var(--sp-3);
+}
+
+.mega-headline {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+}
+
+.mega-headline-zh {
+  margin-left: 0.5rem;
+  font-size: var(--fs-base);
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
+.mega-blurb {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  line-height: 1.7;
+}
+
+.subcat-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: var(--sp-3);
+}
+
+.subcat {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 0.8rem;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-control);
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  transition: border-color 0.16s, color 0.16s, background 0.16s;
+}
+
+.subcat:hover {
+  border-color: var(--brand);
+  color: var(--brand-700);
+  background: var(--brand-50);
+}
+
+.mega-foot {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--line);
+  padding-top: var(--sp-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.mega-all {
+  font-size: var(--fs-base);
+  font-weight: 600;
+  color: var(--brand-ink);
+}
+
+.mega-all:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.mega-hint {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+
+/* ---------- 移动端菜单 ---------- */
+
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: var(--surface);
+  padding: 0.9rem clamp(1rem, 4vw, 2rem) calc(2.5rem + var(--safe-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: none;
+}
+
+.mobile-menu.show {
+  display: block;
+}
+
+.mm-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: var(--sp-4);
+}
+
+.mm-section-title {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: var(--sp-5) 0 var(--sp-2);
+}
+
+.mm-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: 0.85rem 0;
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.mm-link__zh {
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  color: var(--ink-3);
+}
+
+.mm-sub {
+  display: block;
+  width: 100%;
+  padding: 0.7rem 0 0.7rem 0.9rem;
+  border-left: 2px solid var(--line);
+  font-size: var(--fs-base);
+  color: var(--ink-2);
+  text-align: left;
+}
+
+.mm-sub:hover {
+  color: var(--brand-700);
+  border-left-color: var(--brand);
+}
+
+.mm-note {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  line-height: 1.6;
+  padding: 0.4rem 0 0.4rem 0.9rem;
+  border-left: 2px solid var(--line);
+}
+
+/* ============================================================
+   首屏
+   ============================================================ */
+
+.hero {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  padding: calc(var(--nav-h) + var(--sp-6)) 0 var(--sp-7);
+}
+
+/*
+ * 首屏双栏。
+ *
+ * 列宽刻意让「图」略窄于「文」：主视觉是 4:5 竖构图，若两栏等宽，
+ * 图片会比文字块高出近一倍，文字居中后就留下大片死白（改造前实测
+ * 1440px 下左栏上下各空约 180px）。收窄图片列后图文高度接近，
+ * 首屏整体也能压进一屏之内。
+ */
+.hero__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.85fr);
+  gap: clamp(1.5rem, 4.5vw, 4rem);
+  align-items: center;
+}
+
+.hero__kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: var(--sp-4);
+}
+
+/* 品类小标题右侧的香槟金短线 —— 全站少数几处使用辅助色的位置之一 */
+.hero__kicker::after {
+  content: '';
+  flex: none;
+  width: 64px;
+  height: 1px;
+  background: var(--accent);
+}
+
+.hero__title {
+  font-size: var(--fs-display);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.06;
+  max-width: 16ch;
+}
+
+.hero__text {
+  margin-top: var(--sp-4);
+  font-size: var(--fs-lg);
+  color: var(--ink-2);
+  max-width: 34ch;
+  line-height: 1.7;
+}
+
+.hero__cta {
+  display: flex;
+  gap: var(--sp-3);
+  margin-top: var(--sp-5);
+  flex-wrap: wrap;
+}
+
+/*
+ * 首屏品类快捷入口。
+ *
+ * 为什么放在第一屏：本站只有四个目标品类，把它们直接摊在首屏，
+ * 用户不必先点「按品类选购」再等一次跳转 —— 减少一级导航深度。
+ * 用细分隔线而非卡片承载，避免首屏出现第三种卡片样式。
+ */
+.hero__cats {
+  margin-top: var(--sp-6);
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--line);
+}
+
+.hero__cats-label {
+  display: block;
+  margin-bottom: var(--sp-3);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.hero__cat-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.6rem;
+}
+
+.hero__cat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding-bottom: 2px;
+  border-bottom: 1px solid transparent;
+  font-size: var(--fs-base);
+  font-weight: 600;
+  color: var(--ink);
+  transition: color 0.16s var(--ease), border-color 0.16s var(--ease);
+}
+
+.hero__cat:hover {
+  color: var(--brand-700);
+  border-bottom-color: var(--brand);
+}
+
+.hero__cat small {
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  color: var(--ink-3);
+}
+
+.hero__media-col {
+  min-width: 0;
+}
+
+.hero__media {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--r);
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 78% 12%, var(--brand-50) 0%, transparent 60%),
+    linear-gradient(150deg, var(--surface-2) 0%, var(--line) 100%);
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+}
+
+.hero__media-mark {
+  width: 34%;
+  max-width: 190px;
+  color: var(--brand);
+  opacity: 0.5;
+}
+
+/* 主视觉占位图：铺满图位，比品牌标记更接近成品的观感 */
+.hero__photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/*
+ * 主视觉图注。
+ *
+ * 改造前它是压在图片底部的半透明浮层 —— 既遮住画面下缘，
+ * 又因为文案较长而在窄屏占掉近三分之一图高。现在移到图外：
+ * 图片完整可见，图注也能正常换行。
+ */
+.hero__note {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-xs);
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+
+/* ============================================================
+   区块
+   ============================================================ */
+
+.section {
+  padding: var(--sp-8) 0;
+}
+
+.section--tight {
+  padding-top: 0;
+}
+
+.section--surface {
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.sec-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-5);
+  margin-bottom: var(--sp-6);
+  flex-wrap: wrap;
+}
+
+.sec-title {
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-top: var(--sp-2);
+}
+
+.sec-sub {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-base);
+  color: var(--ink-2);
+  max-width: 44ch;
+}
+
+.sec-more {
+  font-size: var(--fs-base);
+  font-weight: 600;
+  color: var(--brand-ink);
+  white-space: nowrap;
+}
+
+.sec-more:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ============================================================
+   分类卡片
+   ============================================================ */
+
+/*
+ * 品类网格。
+ *
+ * ⚠️ 这里**刻意不用** `repeat(auto-fill, minmax(230px, 1fr))`。
+ *    `auto-fill` 的列数随容器宽度变化，遇到「卡数不是列数整数倍」就会留下
+ *    幽灵列 —— 实测 `/categories` 在 1024 视口下容器 960px、`auto-fill` 算出
+ *    3 列，而卡恰好 4 张，于是第 4 张独占第二行、右侧两列全空
+ *    （`audit/phase22/probe_cat.py` 实测 `3列/4项`）。
+ *
+ *    该网格当前唯一的调用点是 `CategoriesPage.vue`，里面就是 4 张目标品类卡，
+ *    因此固定 4 列、按断点降到 2 → 1，任何宽度下都不会有幽灵列。
+ *    （`.cat-grid--real` 用 flex 覆盖 display，`.cat-grid--target` 自带列数，
+ *      两者都不受这里影响。）
+ */
+.cat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-4);
+}
+
+/*
+ * 在售品类：数量由后端数据决定（当前 1 个）。
+ *
+ * ⚠️ 用 flex 流式排布而不是固定列网格 —— 固定列数在「分类数不是列数整数倍」
+ *    时会留下空列（此前首页真实分类 + 4 个目标品类共 5 张卡放进 4 列网格，
+ *    第二行只剩 1 张、右侧 3 列全空）。flex 布局下 1 张卡就是 1 张卡，
+ *    不会产生幽灵列。
+ */
+.cat-grid--real {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+}
+
+.cat-grid--real .cat-card {
+  flex: 0 1 300px;
+  min-width: 0;
+}
+
+/* 目标品类方向：恰好 4 个，用固定 4 列，逐断点降级 */
+.cat-grid--target {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-4);
+}
+
+.cat-targets {
+  margin-top: var(--sp-6);
+}
+
+.cat-targets__label {
+  margin-bottom: var(--sp-4);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--ink-3);
+  letter-spacing: 0.02em;
+}
+
+.cat-targets__note {
+  margin-top: var(--sp-5);
+}
+
+.cat-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  overflow: hidden;
+  transition: border-color 0.2s var(--ease), transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+
+.cat-card:hover {
+  border-color: var(--line-2);
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px rgb(36 35 33 / 7%);
+}
+
+/*
+ * 品类媒体区改为 4:5 竖构图。
+ *
+ * 统一比例是「品类图片构图统一」的落点：首页与分类页共用本类，
+ * 因此改一处两页同时生效。竖构图也更接近编辑式品类墙的观感，
+ * 且与商品卡的 4:5 保持一致 —— 全站商品/品类图只有一个比例。
+ */
+.cat-card__media {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  display: grid;
+  place-items: center;
+  border-bottom: 1px solid var(--line);
+}
+
+.cat-card__mark {
+  width: 26%;
+  max-width: 76px;
+  color: var(--brand);
+  opacity: 0.42;
+}
+
+/* 品类占位图：铺满卡片媒体区 */
+.cat-card__photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s var(--ease);
+}
+
+.cat-card:hover .cat-card__photo {
+  transform: scale(1.04);
+}
+
+/*
+ * 在售 / 筹备中状态。
+ *
+ * 刻意用「白底 + 细边框 + 中性字色」而不是彩色胶囊：
+ * 「筹备中」不是错误状态，用警示色会误导；「在售」也不需要被强调 ——
+ * 真正在售的品类，卡片本身就有商品可看。
+ */
+.cat-card__status {
+  position: absolute;
+  top: 0.7rem;
+  left: 0.7rem;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--r-xs);
+  background: rgb(255 255 255 / 90%);
+  border: 1px solid var(--line-2);
+  color: var(--ink-2);
+}
+
+.cat-card__body {
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1;
+}
+
+.cat-card__name {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.cat-card__zh {
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+}
+
+.cat-card__blurb {
+  margin-top: 0.2rem;
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  line-height: 1.65;
+  /*
+   * ⚠️ 必须做行数钳制 + 省略号。
+   *    此前这里没有任何截断规则，而卡片高度又被网格拉平 ⇒ 超出的文字
+   *    在句子中间被硬切（实测出现「……日常可戴的」「自然融合，易」
+   *    「手拿与收」这类断句），看起来像渲染坏了。
+   */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cat-card__cta {
+  margin-top: auto;
+  padding-top: var(--sp-4);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--brand-ink);
+}
+
+/* ============================================================
+   商品卡
+   ============================================================ */
+
+.grid-4 {
+  display: grid;
+  /*
+   * ⚠️ 桌面端默认 **3 列**，不是 4 列。
+   *
+   * 商品库当前 6 件：4 列会排成「4 + 2」，第二行右侧空两列 ——
+   * 实测 1024px（3 列）反而比 1440px 更整齐。规范 5.1 也建议桌面端
+   * 先评估 3 列，只有在容器宽度与商品数量都允许时才用 4 列。
+   * 因此把 4 列做成显式修饰类 `.grid-4--full`，由调用方按商品数量决定。
+   */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-5);
+}
+
+/* 商品数量足够铺满整数行时才启用 4 列 */
+.grid-4--full {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.grid-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+  gap: var(--sp-5);
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  overflow: hidden;
+  transition: border-color 0.2s var(--ease), transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+
+/*
+ * 悬停反馈保持「轻」。
+ *
+ * 改造前用的是 --shadow（12px/32px，9% 黑），六张卡片同时悬停时会显得很重；
+ * 这里换成更短更淡的一档，并把主要反馈交给「边框变深 + 图片轻微推近」——
+ * 这是编辑式商品墙的常规做法，也让图片本身成为焦点。
+ */
+.card:hover {
+  border-color: var(--line-2);
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px rgb(36 35 33 / 7%);
+}
+
+/* 统一商品图比例（4:5 竖构图，适合首饰 / 假发 / 美妆工具） */
+.card-ph {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+}
+
+.card-ph img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.45s var(--ease);
+}
+
+.card:hover .card-ph img {
+  transform: scale(1.035);
+}
+
+.card-ph .card-ph-mark {
+  width: 30%;
+  max-width: 92px;
+  height: auto;
+  object-fit: contain;
+  color: var(--brand);
+  opacity: 0.4;
+}
+
+/*
+ * 示意图标注。
+ *
+ * 只在商品**没有真实图片**、因而使用占位图时渲染（见 ProductCard.vue）。
+ * 后端补上商品图后，这个标注会自动消失 —— 不需要人工摘除。
+ * 这不是装饰，而是防止占位图被误读成商品实拍。
+ */
+.card-ph-note {
+  position: absolute;
+  right: 0.6rem;
+  bottom: 0.6rem;
+  z-index: 1;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  padding: 0.18rem 0.5rem;
+  border-radius: var(--r-xs);
+  background: rgb(255 255 255 / 84%);
+  color: var(--ink-2);
+}
+
+.card-body {
+  padding: var(--sp-4) var(--sp-4) var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+/*
+ * 商品元信息行：分类 + 状态标记。
+ *
+ * ⚠️ 「新品」此前是压在图片左上角的胶囊角标 —— 当前商品库里 6/6 件
+ *    都是近期上架，于是每张卡都挂一个角标，等于零信息量的装饰。
+ *    现在改为正文里的一行小字元信息：信息保留，视觉噪音消失。
+ */
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.card-flag {
+  font-weight: 700;
+  color: var(--brand-ink);
+}
+
+/*
+ * 商品名的 `<h3>` 外壳。
+ *
+ * ⚠️ 商品名必须是标题（否则整站标题层级在 H2 后中断），但标题元素自带
+ *    margin / font-size，会破坏卡片原有排版。这里把外壳完全"透明化"：
+ *    视觉样式仍由里面的 `.card-name` 承担，外壳只提供语义。
+ */
+.card-name-wrap {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+.card-name {
+  font-size: var(--fs-base);
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--ink);
+  /* 商品名最多两行，保证卡片高度一致 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-name:hover {
+  color: var(--brand-700);
+}
+
+.card-summary {
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-top: auto;
+  padding-top: var(--sp-3);
+}
+
+.card-price {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.card-compare {
+  margin-left: 0.4rem;
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  color: var(--ink-3);
+}
+
+.add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 0.9rem;
+  border-radius: var(--r-control);
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.16s var(--ease), border-color 0.16s var(--ease), color 0.16s var(--ease);
+}
+
+.add-btn:hover {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--on-brand);
+}
+
+/* ============================================================
+   服务说明条
+   ============================================================ */
+
+.service-strip {
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.service-grid {
+  display: grid;
+  /*
+   * ⚠️ 固定 4 列，**不能**用 `auto-fit`。
+   *
+   * 原先写的是 `repeat(auto-fit, minmax(13rem, 1fr))` —— 在 1240px 容器里
+   * 实测算出 **5 列**，而流程只有 4 步 ⇒ 第 5 列恒空，4 步铺不满容器、
+   * 右侧留下一条莫名其妙的空白。
+   * 步骤数（4 步）是固定的业务事实，列数就应当写死并跟着断点降级。
+   */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-5);
+  padding: var(--sp-6) 0;
+}
+
+.service-item {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: flex-start;
+}
+
+.service-item__index {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--line-2);
+  display: grid;
+  place-items: center;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--brand-700);
+}
+
+.service-item__title {
+  font-size: var(--fs-base);
+  font-weight: 700;
+}
+
+.service-item__text {
+  margin-top: 0.15rem;
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+
+/* ============================================================
+   品牌说明（中性占位，不含任何未证实事实）
+   ============================================================ */
+
+.brand-note {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: clamp(1.5rem, 4vw, 3rem);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--sp-6);
+  align-items: center;
+}
+
+.brand-note__title {
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-top: var(--sp-2);
+}
+
+.brand-note__text {
+  margin-top: var(--sp-3);
+  color: var(--ink-2);
+  line-height: 1.75;
+  font-size: var(--fs-base);
+}
+
+.brand-note__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.brand-note__list li {
+  display: flex;
+  gap: 0.6rem;
+  font-size: var(--fs-base);
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+
+.brand-note__list li::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-top: 0.55rem;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* ============================================================
+   页脚
+   ============================================================ */
+
+.footer {
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  padding-top: var(--sp-7);
+}
+
+.foot-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr));
+  gap: var(--sp-6);
+  padding-bottom: var(--sp-6);
+}
+
+.foot-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: var(--sp-3);
+}
+
+.foot-brand__mark {
+  width: 26px;
+  height: 26px;
+  color: var(--brand);
+}
+
+.foot-brand__name {
+  font-size: var(--fs-base);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.foot-tagline {
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  line-height: 1.7;
+  max-width: 30rem;
+}
+
+.foot-h {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: var(--sp-3);
+}
+
+.foot-l {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  align-items: flex-start;
+}
+
+.foot-l a,
+.foot-l button {
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  text-align: left;
+  /*
+   * 桌面端可点区高度。
+   * ------------------------------------------------------------
+   * 实测（Phase 2.2 审计，1440/1280/1024 三个视口）：这两类链接渲染出的
+   * 盒子只有 23px 高，低于 WCAG 2.5.8（AA）要求的 24×24 CSS px 下限；
+   * 而 `.foot-l` 是纵向 flex、`gap: 0.7rem`(11.2px)，相邻链接挨得很近，
+   * 连"24px 圆不相交"的间距豁免也只是勉强擦边。
+   *
+   * 这里用 `inline-flex` 居中 + `min-height: 28px`：比 24px 下限留 4px 余量，
+   * 又只让每个链接增高 5px（页脚列高约 +25px），视觉节奏几乎无变化。
+   * 触屏下另有 `@media (pointer: coarse)` 块把它们撑到 44×44。
+   */
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+}
+
+.foot-l a:hover,
+.foot-l button:hover {
+  color: var(--brand-700);
+}
+
+.foot-phone {
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+  letter-spacing: 0.02em;
+}
+
+.foot-note {
+  font-size: var(--fs-sm);
+  line-height: 1.7;
+  color: var(--ink-3);
+  max-width: 22rem;
+}
+
+.foot-bottom {
+  border-top: 1px solid var(--line);
+  padding: var(--sp-4) 0 calc(var(--sp-4) + var(--safe-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.foot-utils {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.copy {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+
+/* ============================================================
+   购物车悬浮球
+   ------------------------------------------------------------
+   为什么保留：窄屏（≤980px）主导航里的工具区整体隐藏，
+   悬浮球是移动端**唯一**随时可达的购物车入口。
+   ============================================================ */
+
+.cart-fab {
+  position: fixed;
+  right: clamp(1rem, 3vw, 1.75rem);
+  bottom: calc(clamp(1rem, 3vw, 1.75rem) + var(--safe-bottom));
+  z-index: 45;
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--brand);
+  color: var(--on-brand);
+  box-shadow: 0 10px 26px rgb(36 35 33 / 22%);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.cart-fab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgb(36 35 33 / 28%);
+}
+
+.cart-fab .fab-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  background: var(--ink);
+  color: #f7f5f2;
+  border: 2px solid var(--bg);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.cart-fab .fab-badge.zero {
+  display: none;
+}
+
+.cart-fab.bump {
+  animation: fab-bump 0.42s ease;
+}
+
+@keyframes fab-bump {
+  0% {
+    transform: scale(1);
+  }
+
+  35% {
+    transform: scale(1.16);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ============================================================
+   抽屉 / 遮罩
+   ============================================================ */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgb(36 35 33 / 42%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+}
+
+.scrim.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 110;
+  width: min(430px, 100%);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(102%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-lg);
+}
+
+.drawer.show {
+  transform: none;
+}
+
+.drawer-head {
+  flex: none;
+  height: 62px;
+  padding: 0 var(--sp-4);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.drawer-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--fs-md);
+  font-weight: 700;
+}
+
+.drawer-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--r-pill);
+  background: var(--brand);
+  color: var(--on-brand);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.drawer-close {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  transition: background 0.16s;
+}
+
+.drawer-close:hover {
+  background: var(--surface-2);
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-4);
+}
+
+.drawer-foot {
+  flex: none;
+  border-top: 1px solid var(--line);
+  padding: var(--sp-4);
+  padding-bottom: calc(var(--sp-4) + var(--safe-bottom));
+  background: var(--surface);
+}
+
+/* 抽屉内的购物车行 */
+.ci {
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.ci-ph {
+  flex: none;
+  width: 72px;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+}
+
+.ci-ph img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ci-ph .ci-ph-mark {
+  width: 46%;
+  height: auto;
+  color: var(--brand);
+  opacity: 0.45;
+}
+
+.ci-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.ci-name {
+  font-size: var(--fs-base);
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.ci-name:hover {
+  color: var(--brand-700);
+}
+
+.ci-price {
+  margin-top: 0.15rem;
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+}
+
+.ci-ctrl {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.qty {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-control);
+  overflow: hidden;
+}
+
+.qty button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  color: var(--ink-2);
+}
+
+.qty button:hover {
+  background: var(--surface-2);
+}
+
+.qty span {
+  min-width: 28px;
+  text-align: center;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.ci-line-total {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.ci-del {
+  margin-left: auto;
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ci-del:hover {
+  color: var(--danger);
+}
+
+.sum-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  font-size: var(--fs-base);
+  color: var(--ink-2);
+  margin-bottom: 0.55rem;
+}
+
+.sum-row.total {
+  margin: var(--sp-3) 0 0;
+  font-size: var(--fs-lg);
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.empty {
+  text-align: center;
+  padding: var(--sp-7) var(--sp-4);
+  color: var(--ink-3);
+}
+
+.empty-ic {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto var(--sp-4);
+  border-radius: 50%;
+  background: var(--surface-2);
+  display: grid;
+  place-items: center;
+  color: var(--ink-3);
+}
+
+.foot-hint {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* ============================================================
+   状态：加载 / 空 / 错误
+   ============================================================ */
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: var(--sp-7) var(--sp-4);
+  text-align: center;
+  color: var(--ink-2);
+}
+
+.state__icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--ink-3);
+  margin-bottom: 0.25rem;
+}
+
+.state__title {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.state__text {
+  font-size: var(--fs-base);
+  max-width: 34rem;
+  line-height: 1.65;
+}
+
+.state__actions {
+  margin-top: var(--sp-3);
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.state--error .state__title {
+  color: var(--danger);
+}
+
+.state__spinner {
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--line-2);
+  border-top-color: var(--brand);
+  border-radius: 50%;
+  animation: state-spin 0.8s linear infinite;
+}
+
+@keyframes state-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================================
+   面包屑 / 列表页头部 / 筛选
+   ============================================================ */
+
+/*
+ * 面包屑。
+ *
+ * ⚠️ 原先 `.crumb`（商品列表页 / 文章页）与 `.breadcrumb`（商品详情页）是
+ *    两份几乎逐字相同的规则 —— display / align-items / gap / font-size /
+ *    color / flex-wrap 完全一样，只有上下留白不同。同义重复必然漂移
+ *    （改一处忘另一处，两个页面的面包屑就会长得不一样）。
+ *    现在合并为一份共用声明，只有留白按页面语境分开。
+ */
+.crumb,
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+  flex-wrap: wrap;
+}
+
+/* 列表页 / 文章页：面包屑紧贴页头，上方留白由它自己承担 */
+.crumb {
+  padding: var(--sp-5) 0 0;
+}
+
+/* 详情页：面包屑在页面最上方，改为下方留白 */
+.breadcrumb {
+  margin-bottom: var(--sp-5);
+}
+
+.crumb a:hover {
+  color: var(--brand-700);
+}
+
+.crumb b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* 分类 / 列表页同样要避开吸顶导航 */
+.wrap.collection {
+  padding-top: var(--nav-h);
+}
+
+.col-head {
+  padding: var(--sp-5) 0;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: var(--sp-6);
+}
+
+.col-h1 {
+  font-size: clamp(1.6rem, 4vw, 2.25rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-top: var(--sp-2);
+}
+
+.col-desc {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-base);
+  color: var(--ink-2);
+  max-width: 52ch;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  margin-top: var(--sp-4);
+}
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 0.95rem;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-control);
+  background: var(--surface);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--ink-2);
+  white-space: nowrap;
+  transition: border-color 0.16s, color 0.16s, background 0.16s;
+}
+
+.chip:hover {
+  border-color: var(--brand);
+  color: var(--brand-700);
+}
+
+.chip.on {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #f7f5f2;
+}
+
+.search-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 44px;
+  padding: 0 0.3rem 0 1rem;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-control);
+  background: var(--surface);
+  min-width: 280px;
+  flex: 1 1 280px;
+  max-width: 380px;
+}
+
+.search-pill input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
+}
+
+.search-pill input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.search-pill .btn {
+  flex: none;
+  min-height: 36px;
+  padding: 0 1.1rem;
+  font-size: var(--fs-sm);
+}
+
+/* 移动端筛选抽屉 */
+.filter-sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+
+.filter-sheet__title {
+  font-size: var(--fs-md);
+  font-weight: 700;
+}
+
+/* ============================================================
+   商品详情
+   ============================================================ */
+
+/*
+ * 商品详情双栏。
+ *
+ * 列宽从 1.05 : 1 调成 0.95 : 1 —— 主图是 4:5 竖构图，原比例下图片列
+ * 比信息列宽出约 5%，导致图片比右侧信息块高出近一倍（实测 1440px 下
+ * 右栏底部空出约 260px）。收窄图片列 + 加宽信息列后两侧高度接近。
+ */
+.detail {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1fr);
+  gap: clamp(1.5rem, 3.5vw, 3rem);
+  margin-bottom: var(--sp-7);
+  align-items: start;
+}
+
+.detail__gallery {
+  min-width: 0;
+}
+
+.detail__main-image {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+}
+
+.detail__main-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detail__main-image .detail__image-mark {
+  width: 30%;
+  max-width: 200px;
+  height: auto;
+  object-fit: contain;
+  color: var(--brand);
+  opacity: 0.45;
+}
+
+/* 详情页的「示意图」说明 —— 同样只在无真实商品图时出现 */
+.detail__note {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  line-height: 1.6;
+}
+
+.detail__thumbs {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.detail__thumb {
+  width: 68px;
+  aspect-ratio: 4 / 5;
+  padding: 0;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color 0.16s var(--ease), box-shadow 0.16s var(--ease);
+}
+
+.detail__thumb--active {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 1px var(--brand);
+}
+
+.detail__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detail__info {
+  min-width: 0;
+}
+
+.detail__cat {
+  margin-bottom: var(--sp-2);
+}
+
+.detail__name {
+  font-size: clamp(1.5rem, 3.5vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.detail__summary {
+  margin-top: var(--sp-3);
+  color: var(--ink-2);
+  line-height: 1.7;
+}
+
+.detail__price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin-top: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.detail__price {
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.detail__compare {
+  font-size: var(--fs-base);
+  color: var(--ink-3);
+}
+
+.detail__meta {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+  line-height: 1.65;
+}
+
+/*
+ * 询价操作区。
+ *
+ * 改造前：数量输入框与「加入购物车」按钮在同一行、按钮为自适应宽度，
+ * 下方再叠一条提示框和两个次级按钮 —— 主 CTA 被辅助信息淹没。
+ * 现在：用分隔线划分出独立操作区，数量独占一行，主 CTA 全宽置顶，
+ * 次级入口退到最下方。视线顺序 = 操作顺序。
+ */
+.detail__buy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--line);
+}
+
+/*
+ * 详情页数量控件。
+ *
+ * ⚠️ 已改为与 `/cart` 共用 `.qty-control` 步进器（− / 输入框 / +）。
+ *    原先这里是 `input.detail__qty` 的裸 number 输入框，靠浏览器原生微调箭头
+ *    加减 —— 触屏上几乎点不中，且与购物车同一概念却两套交互。
+ *    `.detail__qty` 规则已随之删除。
+ */
+.detail__qty-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.detail__qty-row .form-field__label {
+  margin: 0;
+}
+
+.detail__actions {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+/*
+ * 真实规格参数。
+ *
+ * ⚠️ 只渲染后端**确有值**的字段（见 ProductDetailPage.vue）：
+ *    没有值的字段直接不出现，而不是填一行「未提供」凑满表格。
+ */
+.detail__specs {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  margin: var(--sp-4) 0 0;
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-sm);
+}
+
+.detail__specs dt,
+.detail__specs dd {
+  margin: 0;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.detail__specs dt {
+  color: var(--ink-3);
+}
+
+.detail__specs dd {
+  color: var(--ink);
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.detail__description {
+  margin-top: var(--sp-6);
+}
+
+.section__title {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  margin-bottom: var(--sp-3);
+}
+
+.flow-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+
+.flow-list li {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  font-size: var(--fs-base);
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+
+.flow-list__no {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--brand-50);
+  color: var(--brand-700);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+
+/* ============================================================
+   购物车页
+   ============================================================ */
+
+.cart-line {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.cart-line__thumb {
+  flex: none;
+  width: 56px;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+}
+
+.cart-line__thumb--mark {
+  object-fit: contain;
+  padding: 0.5rem;
+  color: var(--brand);
+  opacity: 0.5;
+}
+
+.qty-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.qty-control__btn {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink-2);
+  cursor: pointer;
+  font-size: var(--fs-md);
+  line-height: 1;
+}
+
+.qty-control__btn:hover {
+  border-color: var(--brand);
+  color: var(--brand-700);
+  background: var(--brand-50);
+}
+
+.qty-control__input {
+  width: 3.6rem;
+  text-align: center;
+  padding: 0.3rem;
+}
+
+.cart-summary {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  margin-top: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.cart-summary__label {
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+}
+
+.cart-summary__value {
+  font-size: var(--fs-xl);
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.cart-summary__actions {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+/*
+ * 购物车表格的移动端形态。
+ *
+ * 桌面端保持语义化 <table>；窄屏下用 CSS 把每一行折叠成一张卡片，
+ * 彻底消除横向滚动，同时**不复制 DOM**（可访问性结构保持一致）。
+ */
+@media (max-width: 720px) {
+  .cart-table {
+    display: block;
+  }
+
+  .cart-table thead {
+    display: none;
+  }
+
+  .cart-table tbody,
+  .cart-table tr,
+  .cart-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .cart-table tr {
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    padding: var(--sp-3);
+    margin-bottom: var(--sp-3);
+    background: var(--surface);
+  }
+
+  .cart-table td {
+    border: none;
+    padding: 0.35rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-3);
+  }
+
+  .cart-table td::before {
+    content: attr(data-label);
+    flex: none;
+    font-size: var(--fs-xs);
+    color: var(--ink-3);
+    letter-spacing: 0.04em;
+  }
+
+  .cart-table td:first-child {
+    padding-bottom: var(--sp-3);
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 0.35rem;
+  }
+
+  .cart-table td:first-child::before {
+    display: none;
+  }
+}
+
+/* ============================================================
+   询价提交页
+   ============================================================ */
+
+.checkout-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: var(--sp-5);
+  align-items: start;
+}
+
+.checkout-summary {
+  position: sticky;
+  top: calc(var(--nav-h) + var(--sp-4));
+}
+
+.checkout-summary__title {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  margin-bottom: var(--sp-3);
+}
+
+.checkout-summary__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: var(--sp-4);
+}
+
+.checkout-summary__item {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  font-size: var(--fs-sm);
+}
+
+.checkout-summary__item span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.checkout-summary__total {
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-base);
+}
+
+.channel-picker {
+  border: 0;
+  padding: 0;
+  margin: 0 0 var(--sp-4);
+  min-inline-size: 0;
+}
+
+.channel-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--sp-3);
+}
+
+.channel-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color 0.16s, background 0.16s;
+}
+
+.channel-option--active {
+  border-color: var(--brand);
+  background: var(--brand-50);
+}
+
+.channel-option input {
+  width: auto;
+  min-height: 0;
+  margin-top: 0.2rem;
+  accent-color: var(--brand);
+}
+
+.channel-option__hint {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+
+.channel-test {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-4);
+  border-top: 1px dashed var(--line-2);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0 var(--sp-4);
+}
+
+.unavailable {
+  margin: 0 0 var(--sp-4);
+  border-left: 3px solid var(--danger);
+}
+
+.unavailable__title {
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.unavailable__list {
+  margin: 0 0 var(--sp-3);
+  padding-left: 1.1rem;
+  list-style: disc;
+  font-size: var(--fs-sm);
+}
+
+/* ============================================================
+   询价结果页
+   ============================================================ */
+
+.result__banner {
+  border-radius: var(--r-sm);
+  border: 1px solid var(--success-line);
+  background: var(--success-bg);
+  color: var(--success);
+  padding: var(--sp-4);
+  font-size: var(--fs-base);
+  line-height: 1.7;
+  margin-bottom: var(--sp-5);
+}
+
+.result__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--sp-4);
+  margin: 0 0 var(--sp-5);
+}
+
+.result__grid dt {
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.result__grid dd {
+  margin: 0.25rem 0 0;
+  font-weight: 600;
+}
+
+.result__no {
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+.credential {
+  border: 1px solid var(--brand-100);
+  background: var(--brand-50);
+  border-radius: var(--r-sm);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+
+.credential__title {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  margin-bottom: var(--sp-2);
+}
+
+.credential__hint {
+  font-size: var(--fs-sm);
+  line-height: 1.65;
+  margin-bottom: var(--sp-3);
+}
+
+.credential__value {
+  display: block;
+  word-break: break-all;
+  padding: 0.7rem 0.85rem;
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-3);
+}
+
+.credential__expiry {
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  margin-bottom: var(--sp-4);
+}
+
+.whatsapp {
+  border: 1px solid var(--success-line);
+  background: var(--success-bg);
+  border-radius: var(--r-sm);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+
+.whatsapp__title {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  margin-bottom: var(--sp-2);
+}
+
+.whatsapp__status {
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-3);
+  line-height: 1.65;
+}
+
+.whatsapp__number {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.whatsapp__number-label {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+
+.whatsapp__number code {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+
+.whatsapp__preview {
+  margin: 0;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 16rem;
+  overflow: auto;
+}
+
+.wa-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+  background: rgb(36 35 33 / 48%);
+}
+
+.wa-modal__box {
+  width: min(30rem, 100%);
+  padding: var(--sp-5);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+}
+
+.wa-modal__title {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  margin-bottom: var(--sp-3);
+}
+
+.wa-modal__text {
+  font-size: var(--fs-base);
+  line-height: 1.7;
+  margin-bottom: var(--sp-3);
+}
+
+.wa-modal__number {
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+  margin-bottom: var(--sp-4);
+}
+
+/* ============================================================
+   404
+   ============================================================ */
+
+.not-found {
+  text-align: center;
+  padding: var(--sp-8) var(--sp-4);
+}
+
+.not-found__code {
+  font-size: clamp(3rem, 10vw, 5rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--brand);
+  opacity: 0.22;
+  line-height: 1;
+  margin-bottom: var(--sp-3);
+}
+
+.not-found__actions {
+  justify-content: center;
+  margin-top: var(--sp-5);
+}
+
+/* ============================================================
+   Toast
+   ============================================================ */
+
+.toast-host {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--sp-6) + var(--safe-bottom));
+  transform: translateX(-50%);
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+  width: min(92vw, 30rem);
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.22s, transform 0.22s;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: none;
+}
+
+.toast__icon {
+  flex: none;
+  line-height: 1.5;
+}
+
+.toast--success {
+  border-color: var(--success-line);
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.toast--error {
+  border-color: var(--danger-line);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.toast--warn {
+  border-color: var(--warn-line);
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+/* ============================================================
+   演示数据角标
+   ============================================================ */
+
+.demo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--r-sm);
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-line);
+  color: var(--warn);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   响应式
+   ============================================================ */
+
+@media (max-width: 1080px) {
+  .grid-4 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--sp-4);
+  }
+
+  /*
+   * ⚠️ `.cat-grid--target` **刻意不在本断点降级**。
+   *
+   * 它恰好是 4 张卡（4 个目标品类方向），降级序列必须是 4 → 2 → 1。
+   * 曾经在这里降成 3 列，结果 1024 视口下第 4 张卡独占第二行、右侧两列全空
+   * —— 正是 Phase 2.2 在 1440 修掉的那个「孤立卡」问题，在 1024 又复发了一次
+   * （`metrics-after.json`：`cat-grid cat-grid--target` 在 1024 实测 3 列 / 4 项）。
+   * 保持 4 列到 900px 断点再降到 2 列，就不会出现任何幽灵列。
+   */
+  .foot-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--sp-5);
+  }
+}
+
+@media (max-width: 980px) {
+  .menu,
+  .utils {
+    display: none;
+  }
+
+  .hamburger {
+    display: grid;
+  }
+
+  .nav-inner {
+    justify-content: space-between;
+  }
+
+  .mega-layer {
+    display: none;
+  }
+
+  .hero__grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* 单栏时主视觉上移：首屏先看图，再看文案 */
+  .hero__media-col {
+    order: -1;
+  }
+
+  .hero__media {
+    aspect-ratio: 16 / 11;
+  }
+
+  .hero__cats {
+    margin-top: var(--sp-5);
+    padding-top: var(--sp-4);
+  }
+
+  .brand-note {
+    grid-template-columns: 1fr;
+  }
+
+  .checkout-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .checkout-summary {
+    position: static;
+  }
+}
+
+@media (max-width: 900px) {
+  .grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--sp-4);
+  }
+
+  /* 4 张卡在窄屏降到 2 列（2×2），而不是 3 列留一张孤立卡 */
+  .cat-grid,
+  .cat-grid--target {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .section {
+    padding: var(--sp-7) 0;
+  }
+
+  .service-grid {
+    grid-template-columns: 1fr;
+    gap: var(--sp-4);
+    padding: var(--sp-5) 0;
+  }
+
+  .sec-head {
+    margin-bottom: var(--sp-5);
+  }
+
+  .sec-title {
+    font-size: var(--fs-xl);
+  }
+
+  .detail {
+    grid-template-columns: 1fr;
+  }
+
+  /*
+   * 单栏时给图集限宽。
+   *
+   * 不限宽的话，768px 平板竖屏下 4:5 主图会高达约 920px ——
+   * 一张图占满一整屏，商品信息被推到屏幕外。
+   */
+  .detail__gallery {
+    max-width: 520px;
+  }
+
+  .foot-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-3);
+  }
+}
+
+@media (max-width: 560px) {
+  .promo {
+    font-size: var(--fs-xs);
+    padding: 0 2.5rem;
+  }
+
+  .promo-extra {
+    display: none;
+  }
+
+  /* 窄屏换成短句 —— 只留「询价制」三个字读起来像被截断 */
+  .promo-short {
+    display: inline;
+  }
+
+  .cat-grid,
+  .cat-grid--target {
+    grid-template-columns: 1fr;
+  }
+
+  .cat-grid--real .cat-card {
+    flex: 1 1 100%;
+  }
+
+  /* 品类卡单列时改横构图：4:5 竖图铺满手机宽度会高达约 410px */
+  .cat-card__media {
+    aspect-ratio: 16 / 10;
+  }
+
+  .grid-4 {
+    gap: var(--sp-3);
+  }
+
+  .card-body {
+    padding: 0.85rem 0.85rem 1rem;
+  }
+
+  .card-name {
+    font-size: var(--fs-sm);
+  }
+
+  .card-summary {
+    display: none;
+  }
+
+  .card-price {
+    font-size: var(--fs-base);
+  }
+
+  /*
+   * 商品卡的「价格 + 加入询价清单」在窄屏改为上下堆叠。
+   *
+   * 360px 两列布局下卡片内宽只有约 126px，而「¥88.00」加上
+   * 「加入询价清单」并排需要约 140px —— 并排必然溢出或被挤压换行。
+   * 堆叠后按钮通栏，点击区域也更大。
+   */
+  .card-foot {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .add-btn {
+    width: 100%;
+    min-height: 38px;
+    font-size: var(--fs-sm);
+  }
+
+  /* 规格表窄屏改为上下结构，避免 8.5rem 标签列挤压取值 */
+  .detail__specs {
+    grid-template-columns: 1fr;
+  }
+
+  .detail__specs dt {
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .detail__specs dd {
+    padding-top: 0.15rem;
+  }
+
+  .foot-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .drawer {
+    width: 100%;
+  }
+
+  .search-pill {
+    min-width: 0;
+    max-width: none;
+  }
+
+  .cart-fab {
+    width: 52px;
+    height: 52px;
+  }
+}
+
+/* ============================================================
+   文章页：计划中的栏目（内容未上线时的诚实替代）
+   ============================================================ */
+
+.planned {
+  margin-top: var(--sp-7);
+  padding-top: var(--sp-6);
+  border-top: 1px solid var(--line);
+}
+
+.planned__title {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: var(--sp-4);
+}
+
+/*
+ * 计划栏目列表。
+ *
+ * ⚠️ 刻意**不用卡片**（无底色、无边框、无圆角）：卡片外观会让顾客以为
+ *    可以点开阅读，而这些栏目当前既没有内容也没有目的地。
+ *    改用「左侧标签 + 右侧说明」的分隔线列表，视觉上明确是"说明"而非"入口"。
+ */
+.planned__list {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--sp-6);
+}
+
+.planned__item {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, auto) minmax(0, 1fr);
+  gap: var(--sp-4);
+  align-items: baseline;
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.planned__item-title {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.planned__item-text {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+  line-height: 1.65;
+}
+
+.planned__note {
+  margin-top: var(--sp-4);
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
+}
+
+@media (max-width: 720px) {
+  .planned__list {
+    grid-template-columns: 1fr;
+  }
+
+  .planned__item {
+    grid-template-columns: 1fr;
+    gap: var(--sp-1);
+  }
+}
+
+/* ============================================================
+   动效克制：尊重系统「减少动态效果」
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .state__spinner {
+    animation-duration: 2.4s !important;
+  }
+}
+
+/* ============================================================
+   触摸目标最小尺寸（WCAG 2.5.8）—— 触屏下可点区域不小于 44px
+   ------------------------------------------------------------
+   ⚠️ 本块**必须**保持在文件最末：它要覆盖组件层里那些 `min-height: 38px`
+      之类的声明。同特异性下靠"后声明胜出"生效，移到前面会被静默覆盖。
+   ⚠️ 只对 `pointer: coarse`（触屏）生效，桌面端指针精度高，不需要撑高，
+      强行撑高只会让桌面版显得松散。
+   ============================================================ */
+@media (pointer: coarse) {
+  .chip,
+  .util-btn,
+  .menu-btn,
+  .icon-btn,
+  .btn,
+  .btn--sm,
+  .btn--danger,
+  .add-btn,
+  .subcat,
+  .mm-link,
+  .mm-sub,
+  .qty button,
+  .qty-control__btn,
+  .detail__thumb,
+  .ci-del,
+  /* 移动端列表里的商品名链接 —— 它是打开商品详情的主要文字入口。
+     ⚠️ 这里**不能**加 `display: flex`：`.card-name` 靠 `-webkit-box`
+        实现两行截断，改成 flex 会让截断失效、文字溢出卡片。 */
+  .card-name,
+  /* 「查看全部分类 / 查看全部商品 →」这类区块级入口 */
+  .sec-more,
+  /* 首屏品类快捷入口 */
+  .hero__cat,
+  /* 品牌字标（回首页） */
+  .brand {
+    min-height: 44px;
+  }
+
+  /* 文字类链接靠 flex 居中，否则文字会贴在 44px 盒子的顶部 */
+  .sec-more,
+  .hero__cat,
+  .brand,
+  .foot-l a,
+  .foot-l button {
+    display: flex;
+    align-items: center;
+  }
+
+  /* 页脚链接（含「WhatsApp 联系我们」这个移动端唯一的联系入口） */
+  .foot-l a,
+  .foot-l button {
+    min-height: 44px;
+  }
+
+  /*
+   * 短文字链接的**宽度**往往只有 28–72px（高度已由上面的 `min-height` 补齐），
+   * 因此仍不是 44×44 的可点区域。这里用「撑出左右内边距 + 负外边距抵消」
+   * 把可点区扩到 44 宽，同时保持文字位置不变（纯加 padding 会把文字右推 8px）。
+   *
+   * 为什么负外边距安全：
+   *   · 页脚 `.foot-l` 是 flex 列，链接之间纵向排列；
+   *   · 面包屑两个链接之间隔着「/」分隔符（约 19px 宽），
+   *     两侧各外扩 8px 仍留 3px 空档，不会造成相邻可点区重叠。
+   */
+  .foot-l a,
+  .foot-l button,
+  .breadcrumb a,
+  .crumb a {
+    min-width: 44px;
+    padding: 0 0.5rem;
+    margin: 0 -0.5rem;
+  }
+
+  /* 数量控件的方块按钮在触屏下同时放大宽度，避免「又高又窄」的怪比例 */
+  .qty button,
+  .qty-control__btn,
+  /* 抽屉 / 移动菜单的关闭按钮：`.drawer-close` 把尺寸写成 40×40，
+     与 `.icon-btn` 同特异性且声明更靠后 ⇒ 触屏下只被抬到 40×44，
+     宽度仍差 4px。它又是覆盖层唯一的关闭入口，必须给足可点面积。 */
+  .drawer-close {
+    min-width: 44px;
+  }
+
+  /*
+   * ⚠️ 下面这几条**必须**在这里补：它们的默认规则特异性高于 `.btn`（0,1,0），
+   *    靠"后声明胜出"救不回来，只能写成同等（或更高）特异性。
+   *    这正是 P1-13 那类「触控规则被静默覆盖」的同一个坑。
+   */
+  .search-pill .btn,            /* 默认 min-height: 36px */
+  .breadcrumb a,                /* 默认只有 23px 高，连 WCAG AA 的 24px 都不到 */
+  .crumb a,                     /* 同上：列表页 / 文章页的面包屑 */
+  .category-block__title a {    /* 分类页「商品库现有分类」的标题链接，默认 24px */
+    min-height: 44px;
+  }
+
+  /* 搜索胶囊整体跟着按钮一起抬到 44px，否则按钮会溢出胶囊边框 */
+  .search-pill {
+    height: auto;
+    min-height: 44px;
+  }
+
+  /* 上面三条同样需要 flex 居中，否则文字贴在 44px 盒子顶部 */
+  .breadcrumb a,
+  .crumb a,
+  .category-block__title a {
+    display: flex;
+    align-items: center;
+  }
+
+  /*
+   * 公告条关闭按钮：实测仅 28×28，是页面上最容易点不中的控件。
+   * 公告条本身高度由 `--promo-h` 写死为 38px，因此这里把条高一并抬到 44px，
+   * 否则关闭按钮会溢出到条外。
+   */
+  .promo {
+    height: auto;
+    min-height: 44px;
+  }
+
+  .promo-close {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}

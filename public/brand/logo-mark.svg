@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Brand mark">
+  <!--
+    中性品牌标记 —— 抽象刻面宝石（faceted gem）。
+    刻意不含任何动物 / 宠物元素；几何切割面既能读作首饰，也能读作
+    「精致 / 打磨」的美容意象，适配首饰、假发、美妆工具、美容配件四个品类。
+    色值取自品牌主色 #8e4a5f 的派生色阶（与 src/config/brand.ts 一致）。
+  -->
+  <defs>
+    <linearGradient id="bm-pavilion" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#a26b7c" />
+      <stop offset="1" stop-color="#7a4052" />
+    </linearGradient>
+  </defs>
+
+  <!-- 轮廓 -->
+  <path d="M20 15 H44 L56 28 L32 51 L8 28 Z" fill="#8e4a5f" />
+
+  <!-- 冠部（上半）：台面 + 左右冠面 -->
+  <path d="M20 15 H44 L38 28 H26 Z" fill="#b0808f" />
+  <path d="M8 28 L20 15 L26 28 Z" fill="#9c6072" />
+  <path d="M56 28 L44 15 L38 28 Z" fill="#804356" />
+
+  <!-- 亭部（下半）：三个切面 -->
+  <path d="M8 28 H26 L32 51 Z" fill="url(#bm-pavilion)" />
+  <path d="M26 28 H38 L32 51 Z" fill="#955569" />
+  <path d="M38 28 H56 L32 51 Z" fill="#7a4052" />
+
+  <!-- 切面分隔线：极淡描边，保证小尺寸下仍有「切割」质感 -->
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="0.8" stroke-linejoin="round">
+    <path d="M20 15 L26 28 H38 L44 15" />
+    <path d="M8 28 H56" />
+    <path d="M26 28 L32 51 L38 28" />
+  </g>
+</svg>

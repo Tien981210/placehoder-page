@@ -1,0 +1,46 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# build output（Vite）
+/dist/
+/dist-ssr/
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files
+.env
+.env.*
+!.env.example
+
+# vite / local
+.vite/
+*.local
+
+# typescript
+*.tsbuildinfo
+
+# 构建验证产物（本地临时输出目录，不入版本控制）
+/.buildverify-*/
+/.buildprobe-*/
+/.e2e-*/
+/dist.pre-*/
